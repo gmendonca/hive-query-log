@@ -49,9 +49,8 @@ class Parse(object):
         regex_queue_user = re.compile('Setting queue name to: \'(?P<queue>.+)\' for user \'(?P<user>.+)\'')
 
         thread_info = {}
-        query_info = {}
         incommand = False
-        query_id = None
+        thread_id = None
 
         for hive_log_file in hive_log_files:
             file = open(hive_log_file)
@@ -61,8 +60,6 @@ class Parse(object):
                 if match:
                     log_time = datetime.strptime(match.group('date') + ' ' + match.group('time'), '%Y-%m-%d %H:%M:%S,%f')
                     if self.time_in_range(self.config.FROM_TIME, self.config.TO_TIME, log_time):
-                        #print match.group('level'), match.group('class'),  match.group('pool'), match.group('thread')
-                        #print match.group('message')
                         message = match.group('message')
                         thread = match.group('thread')
                         if thread and thread not in thread_info:
@@ -70,33 +67,34 @@ class Parse(object):
                             thread_info[thread] = {}
                         if incommand:
                             incommand = False
-                            logging.debug('query = {}'.format(query_info[query_id]['query']))
-                            query_id = None
+                            logging.debug('query = {}'.format(thread_info[thread_id]['query']))
+                            thread_id = None
                         if match.group('class') == 'org.apache.hadoop.hive.ql.Driver':
                             if match.group('pool') == 'HiveServer2-Handler-Pool':
                                 compile = re.search(regex_completed_compiling, message)
                                 if compile:
-                                    query_info[compile.group('query_id')] = {
+                                    thread_info[thread] = {
+                                            'query_id': compile.group('query_id'),
                                             'compile_time': compile.group('time')
                                             }
                             elif match.group('pool') == 'HiveServer2-Background-Pool':
                                 command = re.search(regex_query_command, message)
                                 if command:
-                                    query_id = command.group('query_id')
-                                    print query_id
+                                    logging.debug('query_id = {}'.format(command.group('query_id')))
+                                    thread_id = thread
                                     incommand = True
                                     # cases when the query is in the same line as the command log
                                     query = command.group('query')
                                     if query:
-                                        query_info[query_id] = {
+                                        thread_info[thread] = {
                                                 'query': query
                                                 }
-                elif incommand and query_id:
+                elif incommand and thread_id:
                     # multline query
-                    if 'query' in query_info[query_id]:
-                        query_info[query_id]['query'] += line
+                    if 'query' in thread_info[thread_id]:
+                        thread_info[thread_id]['query'] += line
                     else:
-                        query_info[query_id] = {
+                        thread_info[thread_id] = {
                                 'query': line
                                 }
 
