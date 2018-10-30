@@ -45,9 +45,10 @@ class Parse(object):
 
         regex_completed_compiling = re.compile('^Completed compiling command\(queryId=(?P<query_id>.+)\); Time taken\: (?P<time>.*)$')
         regex_query_command = re.compile('^Executing command\(queryId=(?P<query_id>.+)\)\:(?P<query>.*)$')
-        regex_completed_command = re.compiles('^Completed executing command\(queryId=(?P<query_id>.+)\)\; Time taken\: (?P<time>.*)$')
+        regex_completed_command = re.compile('^Completed executing command\(queryId=(?P<query_id>.+)\)\; Time taken\: (?P<time>.*)$')
+        regex_queue_user = re.compile('Setting queue name to: \'(?P<queue>.+)\' for user \'(?P<user>.+)\'')
 
-
+        thread_info = {}
         query_info = {}
         incommand = False
         query_id = None
@@ -63,6 +64,10 @@ class Parse(object):
                         #print match.group('level'), match.group('class'),  match.group('pool'), match.group('thread')
                         #print match.group('message')
                         message = match.group('message')
+                        thread = match.group('thread')
+                        if thread and thread not in thread_info:
+                            # starting dict for next thread
+                            thread_info[thread] = {}
                         if incommand:
                             incommand = False
                             logging.debug('query = {}'.format(query_info[query_id]['query']))
