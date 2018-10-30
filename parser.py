@@ -43,7 +43,6 @@ class Parse(object):
 
         regex_log_line = re.compile('^(?P<date>[12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))\ (?P<time>\d{2}\:\d{2}\:\d{2}\,\d{3})\ (?P<level>INFO|WARN|ERROR)\ \ (?P<class>[a-zA-Z.]+)\:\ \[(?P<pool>[a-zA-Z0-9-.]+)\:\ (?P<thread>[a-zA-Z0-9-.]+)\]\: (?P<message>.*)$')
 
-        regex_compiling_command = re.compile('^Compiling command\(queryId=(?P<query_id>.+)\)\:(?P<query>.*)$')
         regex_completed_compiling = re.compile('^Completed compiling command\(queryId=(?P<query_id>.+)\); Time taken\: (?P<time>.*)$')
         regex_query_command = re.compile('^Executing command\(queryId=(?P<query_id>.+)\)\:(?P<query>.*)$')
 
@@ -69,19 +68,10 @@ class Parse(object):
                         if match.group('class') == 'org.apache.hadoop.hive.ql.Driver':
                             if match.group('pool') == 'HiveServer2-Handler-Pool':
                                 compile = re.search(regex_completed_compiling, message)
-                                compiling = re.search(regex_compiling_command, message)
                                 if compile:
                                     query_info[compile.group('query_id')] = {
                                             'compile_time': compile.group('time')
                                             }
-                                if compiling:
-                                    query_id = compiling.group('query_id')
-                                    incommand = True
-                                    query = compiling.group('query')
-                                    if query:
-                                        query_info[query_id] = {
-                                                'query': query
-                                                }
                             elif match.group('pool') == 'HiveServer2-Background-Pool':
                                 command = re.search(regex_query_command, message)
                                 if command:
@@ -96,11 +86,7 @@ class Parse(object):
                                                 }
                 elif incommand and query_id:
                     # multline query
-                    if query_id not in query_info:
-                        query_info[query_id] = {
-                                'query': query
-                                }
-                    elif 'query' in query_info[query_id]:
+                    if 'query' in query_info[query_id]:
                         query_info[query_id]['query'] += line
                     else:
                         query_info[query_id] = {
