@@ -68,27 +68,34 @@ class Parse(object):
                         if incommand:
                             incommand = False
                             logging.debug('query = {}'.format(thread_info[thread_id]['query']))
+                            # maybe broken file can mess this up, I think
+                            if 'queue'in thread_info[thread]: logging.debug('queue= {}'.format(thread_info[thread]['queue']))
+                            if 'user' in thread_info[thread]: logging.debug('user = {}'.format(thread_info[thread]['user']))
                             thread_id = None
+                        if match.group('class') == 'org.apache.hadoop.hive.schshim.FairSchedulerShim':
+                            queue_user = re.search(regex_queue_user, message)
+                            if queue_user:
+                                thread_info[thread]['queue'] = queue_user.group('queue')
+                                thread_info[thread]['user'] = queue_user.group('user')
                         if match.group('class') == 'org.apache.hadoop.hive.ql.Driver':
-                            if match.group('pool') == 'HiveServer2-Handler-Pool':
-                                compile = re.search(regex_completed_compiling, message)
-                                if compile:
-                                    thread_info[thread] = {
-                                            'query_id': compile.group('query_id'),
-                                            'compile_time': compile.group('time')
-                                            }
-                            elif match.group('pool') == 'HiveServer2-Background-Pool':
-                                command = re.search(regex_query_command, message)
-                                if command:
-                                    logging.debug('query_id = {}'.format(command.group('query_id')))
-                                    thread_id = thread
-                                    incommand = True
-                                    # cases when the query is in the same line as the command log
-                                    query = command.group('query')
-                                    if query:
-                                        thread_info[thread] = {
-                                                'query': query
-                                                }
+                            # removing this cause tables with ALTER and DROP wasn't taking into account
+                            # if this is intended, maybe we need to remove this
+                            #if match.group('pool') == 'HiveServer2-Handler-Pool':
+                            compile = re.search(regex_completed_compiling, message)
+                            if compile:
+                                thread_info[thread]['query_id'] = compile.group('query_id')
+                                thread_info[thread]['compile_time'] = compile.group('time')
+                            #elif match.group('pool') == 'HiveServer2-Background-Pool':
+                            command = re.search(regex_query_command, message)
+                            if command:
+                                logging.debug('query_id = {}'.format(command.group('query_id')))
+                                logging.debug('thread_id = {}'.format(thread))
+                                thread_id = thread
+                                incommand = True
+                                # cases when the query is in the same line as the command log
+                                query = command.group('query')
+                                if query:
+                                    thread_info[thread]['query'] = query
                 elif incommand and thread_id:
                     # multline query
                     if 'query' in thread_info[thread_id]:
