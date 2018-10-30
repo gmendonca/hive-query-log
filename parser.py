@@ -45,6 +45,8 @@ class Parse(object):
 
         regex_completed_compiling = re.compile('^Completed compiling command\(queryId=(?P<query_id>.+)\); Time taken\: (?P<time>.*)$')
         regex_query_command = re.compile('^Executing command\(queryId=(?P<query_id>.+)\)\:(?P<query>.*)$')
+        regex_completed_command = re.compiles('^Completed executing command\(queryId=(?P<query_id>.+)\)\; Time taken\: (?P<time>.*)$')
+
 
         query_info = {}
         incommand = False
