@@ -41,7 +41,15 @@ class Parse(object):
     def parse_logs(self):
         hive_log_files = self.find_files()
 
-        regex_log_line = re.compile('^(?P<date>[12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))\ (?P<time>\d{2}\:\d{2}\:\d{2}\,\d{3})\ (?P<level>INFO|WARN|ERROR)\ \ (?P<class>[a-zA-Z.]+)\:\ \[(?P<pool>[a-zA-Z0-9-.]+)\:\ (?P<thread>[a-zA-Z0-9-.]+)\]\:')
+        regex_log_line = re.compile('^(?P<date>[12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))\ (?P<time>\d{2}\:\d{2}\:\d{2}\,\d{3})\ (?P<level>INFO|WARN|ERROR)\ \ (?P<class>[a-zA-Z.]+)\:\ \[(?P<pool>[a-zA-Z0-9-.]+)\:\ (?P<thread>[a-zA-Z0-9-.]+)\]\: (?P<message>.*)$')
+
+        regex_completed_compiling = re.compile('^Completed compiling command\(queryId=(?P<query_id>.+)\); Time taken\: (?P<time>.*)$')
+        regex_query_command = re.compile('^Executing command\(queryId=(?P<query_id>.+)\)\:')
+        regex_query_id = re.compile('^Query ID = (?P<query_id>.+)$')
+
+        query_info = {}
+        incommand = False
+        query_id = None
 
         for hive_log_file in hive_log_files:
             file = open(hive_log_file)
@@ -51,8 +59,35 @@ class Parse(object):
                 if match:
                     log_time = datetime.strptime(match.group('date') + ' ' + match.group('time'), '%Y-%m-%d %H:%M:%S,%f')
                     if self.time_in_range(self.config.FROM_TIME, self.config.TO_TIME, log_time):
-                        print match.group('level'), match.group('class'),  match.group('pool'), match.group('thread')
-
+                        #print match.group('level'), match.group('class'),  match.group('pool'), match.group('thread')
+                        #print match.group('message')
+                        message = match.group('message')
+                        if match.group('class') == 'org.apache.hadoop.hive.ql.Driver':
+                            if match.group('pool') == 'HiveServer2-Handler-Pool':
+                                compile = re.search(regex_completed_compiling, message)
+                                if compile:
+                                    query_info[compile.group('query_id')] = {
+                                            'compile_time': compile.group('time')
+                                            }
+                            elif match.group('pool') == 'HiveServer2-Background-Pool':
+                                command = re.search(regex_query_command, message)
+                                if command:
+                                    query_id = command.group('query_id')
+                                    incommand = True
+                                elif incommand:
+                                    query_identifier = re.search(regex_query_id, message)
+                                    if query_identifier.group('query_id') == query_id:
+                                        incommand = False
+                                        print query_info[query_id]['query']
+                                        query_id = None
+                elif incommand and query_id:
+                    # multline query
+                    if 'query' in query_info[query_id]:
+                        query_info[query_id]['query'] += line
+                    else:
+                        query_info[query_id] = {
+                                'query': line
+                                }
 
 
 if __name__ == '__main__':
