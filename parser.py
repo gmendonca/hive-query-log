@@ -69,7 +69,7 @@ class Parse(object):
                             incommand = False
                             logging.debug('query = {}'.format(thread_info[thread_id]['query']))
                             # maybe broken file can mess this up, I think
-                            if 'queue'in thread_info[thread]: logging.debug('queue= {}'.format(thread_info[thread]['queue']))
+                            if 'queue'in thread_info[thread]: logging.debug('queue = {}'.format(thread_info[thread]['queue']))
                             if 'user' in thread_info[thread]: logging.debug('user = {}'.format(thread_info[thread]['user']))
                             thread_id = None
                         if match.group('class') == 'org.apache.hadoop.hive.schshim.FairSchedulerShim':
@@ -96,6 +96,12 @@ class Parse(object):
                                 query = command.group('query')
                                 if query:
                                     thread_info[thread]['query'] = query
+                            finish_command = re.search(regex_completed_command, message)
+                            if finish_command:
+                                time_taken = finish_command.group('time')
+                                logging.debug('time taken = {}'.format(time_taken))
+                                # maybe I should check for query_id in every step
+                                thread_info[thread]['time_take'] = time_taken
                 elif incommand and thread_id:
                     # multline query
                     if 'query' in thread_info[thread_id]:
