@@ -99,7 +99,7 @@ class Parse(object):
                             finish_command = re.search(regex_completed_command, message)
                             if finish_command:
                                 time_taken = finish_command.group('time')
-                                logging.debug('time taken = {}'.format(time_taken))
+                                logging.debug('time taken = {} {}'.format(time_taken, finish_command.group('query_id')))
                                 # maybe I should check for query_id in every step
                                 thread_info[thread]['time_take'] = time_taken
                 elif incommand and thread_id:
