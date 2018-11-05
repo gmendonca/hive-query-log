@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, date
 from elasticsearch import Elasticsearch
 
 class Config(object):
-    LOG_DIR = './'
+    LOG_DIR = '/var/log/hive/'
     GLOB_PATTERN = 'hadoop-cmf-CD-HIVE-*-HIVESERVER2-*.ec2.internal.log.out*'
     FROM_TIME = (datetime.today() - timedelta(minutes=15))
     TO_TIME = datetime.today().now()
