@@ -3,14 +3,17 @@ import os
 import re
 import time
 import logging
-from datetime import datetime, timedelta
+import socket
+from datetime import datetime, timedelta, date
+from elasticsearch import Elasticsearch
 
 class Config(object):
     LOG_DIR = './'
     GLOB_PATTERN = 'hadoop-cmf-CD-HIVE-*-HIVESERVER2-*.ec2.internal.log.out*'
-    FROM_TIME = (datetime.today() - timedelta(hours=45))
+    FROM_TIME = (datetime.today() - timedelta(hours=225))
     TO_TIME = datetime.today().now()
-
+    ES_HOST = os.environ['ES_HOST']
+    ES_PORT = os.environ['ES_PORT']
 
 class Parse(object):
 
@@ -37,6 +40,14 @@ class Parse(object):
                 selected.append(hive_log_file)
 
         return selected
+
+    def send_to_elasticsearch(self, query_dict):
+        connection_es = "%s:%s" % (self.config.ES_HOST, self.config.ES_PORT)
+        es = Elasticsearch(connection_es)
+        index_name = "hive_%s_%s" % (socket.gethostname(), date.today())
+        es.indices.create(index=index_name, ignore=400) # 400 is index already created
+        query_dict['timestamp'] = datetime.now()
+        es.index(index=index_name, doc_type='query', body=query_dict)
 
     def parse_logs(self):
         hive_log_files = self.find_files()
@@ -96,12 +107,16 @@ class Parse(object):
                                 query = command.group('query')
                                 if query:
                                     thread_info[thread]['query'] = query
+                                    thread_info[thread]['query_start_time'] = log_time
                             finish_command = re.search(regex_completed_command, message)
                             if finish_command:
                                 time_taken = finish_command.group('time')
                                 logging.debug('time taken = {} {}'.format(time_taken, finish_command.group('query_id')))
                                 # maybe I should check for query_id in every step
                                 thread_info[thread]['time_take'] = time_taken
+                                # since command finshed, sending to ES
+                                self.send_to_elasticsearch(thread_info[thread])
+                                del thread_info[thread]
                 elif incommand and thread_id:
                     # multline query
                     if 'query' in thread_info[thread_id]:
