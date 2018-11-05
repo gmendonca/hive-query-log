@@ -113,7 +113,7 @@ class Parse(object):
                                 time_taken = finish_command.group('time')
                                 logging.debug('time taken = {} {}'.format(time_taken, finish_command.group('query_id')))
                                 # maybe I should check for query_id in every step
-                                thread_info[thread]['time_take'] = time_taken
+                                thread_info[thread]['time_taken'] = time_taken
                                 # since command finshed, sending to ES
                                 self.send_to_elasticsearch(thread_info[thread])
                                 del thread_info[thread]
