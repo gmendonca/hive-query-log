@@ -10,7 +10,7 @@ from elasticsearch import Elasticsearch
 class Config(object):
     LOG_DIR = './'
     GLOB_PATTERN = 'hadoop-cmf-CD-HIVE-*-HIVESERVER2-*.ec2.internal.log.out*'
-    FROM_TIME = (datetime.today() - timedelta(hours=225))
+    FROM_TIME = (datetime.today() - timedelta(minutes=15))
     TO_TIME = datetime.today().now()
     ES_HOST = os.environ['ES_HOST']
     ES_PORT = os.environ['ES_PORT']
