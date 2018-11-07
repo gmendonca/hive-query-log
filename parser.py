@@ -45,7 +45,7 @@ class Parse(object):
     def send_to_elasticsearch(self, query_dict):
         connection_es = "%s:%s" % (self.config.ES_HOST, self.config.ES_PORT)
         es = Elasticsearch(connection_es)
-        index_name = "hive-%s-%s" % (socket.gethostname(), date.today())
+        index_name = "hive-%s-%s" % (socket.gethostname(), date.today().strftime('%Y.%m.%d'))
         es.indices.create(index=index_name, ignore=400) # 400 is index already created
         query_dict['timestamp'] = datetime.now()
         es.index(index=index_name, doc_type='query', body=query_dict)
