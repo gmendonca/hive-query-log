@@ -47,11 +47,6 @@ class Parse(object):
 
     def time_in_range(self, start, end, x):
         """Return true if x is in the range [start, end]"""
-        print "start "
-        print start
-        print "end "
-        print end
-        print x
         if start <= end:
             return start <= x <= end
         else:
