@@ -8,7 +8,7 @@ from requests.auth import HTTPBasicAuth
 from datetime import datetime, timedelta, date
 
 class Config(object):
-    FROM_TIME = (datetime.utcnow() - timedelta(minutes=15))
+    FROM_TIME = (datetime.utcnow() - timedelta(minutes=5))
     TO_TIME = datetime.utcnow()
     PRESTO_HOST = 'localhost'
     PRESTO_SSL = False

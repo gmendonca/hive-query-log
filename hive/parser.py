@@ -11,7 +11,7 @@ from elasticsearch import Elasticsearch
 class Config(object):
     LOG_DIR = '/var/log/hive/'
     GLOB_PATTERN = 'hadoop-cmf-CD-HIVE-*-HIVESERVER2-*.ec2.internal.log.out*'
-    FROM_TIME = (datetime.today() - timedelta(minutes=15))
+    FROM_TIME = (datetime.today() - timedelta(minutes=5))
     TO_TIME = datetime.today().now()
     ES_HOST = 'localhost'
     ES_PORT = 9200
